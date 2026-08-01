@@ -9,6 +9,16 @@
     let
       inherit (lib.cosmic) defaultNullOpts;
 
+      panelSize =
+        with lib.types;
+        either (ronEnum [
+          "XS"
+          "S"
+          "M"
+          "L"
+          "XL"
+        ]) (ronTupleEnumOf ints.u32 [ "Custom" ] 1);
+
       panelSubmodule = lib.types.submodule {
         freeformType = with lib.types; attrsOf anything;
         options = {
@@ -116,6 +126,17 @@
                 struct unless all four attributes are present, so set them together.
               '';
 
+          autohover_delay_ms =
+            defaultNullOpts.mkRonOptionalOf lib.types.ints.u32
+              {
+                __type = "optional";
+                value = 500;
+              }
+              ''
+                The time in milliseconds a pointer must hover an applet before its popup
+                opens. Set the `value` to `null` to disable hover-to-open entirely.
+              '';
+
           background =
             defaultNullOpts.mkNullableWithRaw
               (
@@ -134,9 +155,53 @@
                 The appearance of the panel.
               '';
 
+          border_radius = defaultNullOpts.mkU32 8 ''
+            The radius of the panel's corners, in pixels.
+          '';
+
+          exclusive_zone = defaultNullOpts.mkBool true ''
+            Whether the panel reserves an exclusive zone, so that maximised windows are
+            laid out beside it rather than underneath it.
+
+            COSMIC ignores this while `autohide` is not `Never`, since a hidden panel
+            cannot hold a zone open.
+          '';
+
           expand_to_edges = defaultNullOpts.mkBool true ''
             Whether the panel should expand to the edges of the screen.
           '';
+
+          keep_style_on_maximize = defaultNullOpts.mkBool false ''
+            Whether the panel keeps its configured styling when a window is maximised.
+
+            When `false`, COSMIC drops the panel's background and rounding while a
+            maximised window is focused.
+          '';
+
+          keyboard_interactivity =
+            defaultNullOpts.mkRonEnum [ "Exclusive" "None" "OnDemand" ]
+              {
+                __type = "enum";
+                variant = "OnDemand";
+              }
+              ''
+                How the panel's layer surface takes keyboard focus.
+
+                - `None`: the panel never receives keyboard input.
+                - `OnDemand`: the panel receives keyboard input when it is clicked.
+                - `Exclusive`: the panel takes keyboard focus away from other surfaces.
+              '';
+
+          layer =
+            defaultNullOpts.mkRonEnum [ "Background" "Bottom" "Overlay" "Top" ]
+              {
+                __type = "enum";
+                variant = "Top";
+              }
+              ''
+                The `wlr-layer-shell` layer the panel is placed on, which decides what it
+                is drawn above and below.
+              '';
 
           name = lib.mkOption {
             type = lib.types.str;
@@ -176,6 +241,15 @@
               ''
                 The output(s) the panel should be displayed on.
               '';
+
+          padding = defaultNullOpts.mkU32 4 ''
+            The padding around the panel's contents, in pixels.
+          '';
+
+          padding_overlap = defaultNullOpts.mkNullableWithRaw (lib.types.numbers.between 0.0 1.0) 0.5 ''
+            How much of the panel's padding neighbouring applets are allowed to overlap,
+            as a ratio between `0.0` and `1.0`.
+          '';
 
           plugins_center =
             defaultNullOpts.mkRonOptionalOf (with lib.types; listOf str)
@@ -218,14 +292,61 @@
               '';
 
           size =
-            defaultNullOpts.mkRonEnum [ "XS" "S" "M" "L" "XL" ]
+            defaultNullOpts.mkNullableWithRaw panelSize
               {
                 __type = "enum";
                 variant = "M";
               }
               ''
-                The size of the panel.
+                The size of the panel, either one of the named sizes or
+                `Custom(<pixels>)`.
               '';
+
+          size_center =
+            defaultNullOpts.mkRonOptionalOf panelSize
+              {
+                __type = "optional";
+                value = {
+                  __type = "enum";
+                  variant = "M";
+                };
+              }
+              ''
+                Size override for the applets in the center of the panel. Set the `value`
+                to `null` to use `size`.
+              '';
+
+          size_wings =
+            defaultNullOpts.mkRonOptionalOf
+              (with lib.types; ronTupleOf (ronOptionalOf (maybeRonRaw panelSize)) 2)
+              {
+                __type = "optional";
+                value = {
+                  __type = "tuple";
+                  value = [
+                    {
+                      __type = "optional";
+                      value = {
+                        __type = "enum";
+                        variant = "S";
+                      };
+                    }
+                    {
+                      __type = "optional";
+                      value = null;
+                    }
+                  ];
+                };
+              }
+              ''
+                Size overrides for the applets on the left/top and right/bottom sides of
+                the panel, respectively. Each side is itself optional: set a side to
+                `null` to use `size` for it.
+              '';
+
+          spacing = defaultNullOpts.mkU32 0 ''
+            The space between the panel's applets, in pixels.
+          '';
         };
       };
     in
