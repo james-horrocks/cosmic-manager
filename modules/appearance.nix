@@ -1374,6 +1374,7 @@
     let
       cfg = config.wayland.desktopManager.cosmic;
       version = 1;
+      themeVersion = 2;
     in
     {
       home.activation.buildCosmicTheme =
@@ -1394,14 +1395,14 @@
         (lib.mkIf (cfg.appearance.theme.dark != null) {
           "com.system76.CosmicTheme.Dark.Builder" = {
             entries = cfg.appearance.theme.dark;
-            inherit version;
+            version = themeVersion;
           };
         })
 
         (lib.mkIf (cfg.appearance.theme.light != null) {
           "com.system76.CosmicTheme.Light.Builder" = {
             entries = cfg.appearance.theme.light;
-            inherit version;
+            version = themeVersion;
           };
         })
 
