@@ -308,12 +308,6 @@
                       Window gaps size (outer and inner, respectively) for COSMIC compositor.
                     '';
 
-                is_frosted = defaultNullOpts.mkBool false ''
-                  Whether to enable blurred transparency for COSMIC compositor.
-
-                  NOTE: This option doesn't work for COSMIC yet.
-                '';
-
                 neutral_tint =
                   defaultNullOpts.mkNullable (lib.types.ronOptionalOf srgbType)
                     {
